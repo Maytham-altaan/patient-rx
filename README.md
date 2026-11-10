@@ -1,20 +1,25 @@
-# Pharmacy Triage Pilot — نموذج تجريبي (الإسهال)
+# Patient Rx — نموذج تجريبي للتوجيه الدوائي
 
 A single-file prototype for the MSc proposal *Development, Validation, and Evaluation of an AI-Powered
 Self-Medication Support Tool for Managing Patients with Minor Illness Symptoms* (University of Baghdad,
-College of Pharmacy). Diarrhoea is the pilot ailment.
+College of Pharmacy). Ten minor ailments are covered; diarrhoea is the fully built pilot ailment.
 
-**Live demo:** https://maytham-altaan.github.io/pharmacy-triage-pilot/
+**Live demo:** https://maytham-altaan.github.io/patient-rx/
 
 ## What it does
-1. **Assessment** — 19 questions in Iraqi Arabic (WWHAM + diarrhoea-specific items).
+0. **Complaint picker** — the patient first chooses the body area and the ailment from the 10 covered.
+1. **Assessment** — Iraqi-Arabic questions: shared ones (who, age, duration, chronic illness, recurrence)
+   plus the ailment's own pack. Diarrhoea carries the full WWHAM + diarrhoea-specific set (19 questions);
+   the other nine run the shared engine with their own red-flag checklist.
 2. **Decision** — physician referral if any referral criterion is met, otherwise pharmacy visit,
    with the triggering criteria shown to the patient.
 3. **Direction** — GPS (or manual area choice) sorts demo pharmacies / physicians by distance,
    with a Google Maps route link.
-4. **Follow-up** — the patient writes what the pharmacist dispensed and gets counselling on dose,
-   timing, duration and side effects; outcome is recorded after the treatment timescale
-   (24 h in children, 2 days otherwise).
+4. **Expected medicines** — before the visit, the result page lists example medicines for that ailment,
+   marking any that are inappropriate for the patient's age (e.g. loperamide under 12).
+5. **Follow-up** — on return the patient ticks which of those medicines was actually dispensed (or types
+   another), and gets counselling on dose, timing, duration and side effects, with a warning when the
+   dispensed drug does not fit the age. Outcome is recorded after the treatment timescale.
 
 ## Referral criteria encoded
 From *Community Pharmacy 2026* course notes and *Symptoms in the Pharmacy* (Blenkinsopp):
@@ -27,6 +32,9 @@ illness; pregnancy; recurrent diarrhoea or changed bowel habit; suspected food-p
 ## Pilot notes
 - Triage is a deterministic rule set, not a language model — required so AI decisions can be compared
   against the pharmacists' gold standard (Cohen's kappa, sensitivity, specificity).
+- Adding an ailment means adding one entry to `DIS` in `index.html`: name, body area, red-flag list,
+  example medicines, treatment timescale. Diarrhoea shows the depth each of the 10 reaches once its
+  content is translated and approved by the expert panel.
 - The AI is used for the free-text counselling step, via the artifact `sample` capability. Without it the
   page falls back to a built-in medication knowledge base, so the demo works offline.
 - Pharmacy and physician entries are demo data; replace `PLACES` in `index.html` with the four Wasit

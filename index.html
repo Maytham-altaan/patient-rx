@@ -1,10 +1,10 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>صيدلي جيبي</title>
+<title>Patient Rx</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
-/* Layout: single centered column; screens toggled with [hidden]; chat transcript + answer rail at the bottom */
+/* Layout: single centered column; screens toggled with [hidden]; pick -> chat -> result -> follow-up */
 :root{
   --bg:#f3f6f4; --surface:#ffffff; --surface-2:#eaf0ed;
   --fg:#15211e; --muted:#5d6f69; --line:#d6e0db;
@@ -35,20 +35,20 @@
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.65}
 #app{max-width:44rem;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:1.4rem 3rem}
 h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.3;text-wrap:balance;margin:0}
-h1{font-size:1.75rem;letter-spacing:.2px}
+h1{font-size:1.75rem;letter-spacing:.3px}
 h2{font-size:1.18rem}
-h3{font-size:1rem}
+h3{font-size:.95rem;color:var(--muted);font-weight:500;letter-spacing:.3px}
 p{margin:0}
 ul{margin:0;padding-inline-start:1.1rem}
 li{margin-block:.2rem}
 .stack{display:flex;flex-direction:column;gap:1rem}
 .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 header.top{display:flex;gap:.75rem;align-items:center;margin-bottom:1.2rem}
-.mark{width:42px;height:42px;flex:0 0 auto;border-radius:12px;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:var(--display);font-size:1.4rem}
+.mark{width:44px;height:44px;flex:0 0 auto;border-radius:12px;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:var(--display);font-size:1.25rem;letter-spacing:.5px}
 .sub{color:var(--muted);font-size:.86rem}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem;display:flex;flex-direction:column;gap:.6rem}
-.note{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);border-radius:12px;padding:.7rem .85rem;font-size:.88rem;color:var(--fg)}
-.steps{display:grid;gap:.5rem;counter-reset:s}
+.note{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);border-radius:12px;padding:.7rem .85rem;font-size:.88rem}
+.steps{display:grid;gap:.5rem}
 .steps li{list-style:none;display:grid;grid-template-columns:1.6rem 1fr;gap:.6rem;align-items:start}
 .steps li b{font-family:var(--display);color:var(--primary);font-variant-numeric:tabular-nums}
 button{font-family:inherit;font-size:1rem;cursor:pointer}
@@ -60,6 +60,10 @@ button{font-family:inherit;font-size:1rem;cursor:pointer}
 .opt[aria-pressed="true"]{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-ink);font-weight:500}
 :focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 input[type=text],input[type=number],select,textarea{font-family:inherit;font-size:1rem;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:11px;padding:.6rem .75rem;width:100%;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.5rem}
+.dis{display:flex;flex-direction:column;gap:.1rem;align-items:flex-start;width:100%}
+.dis small{color:var(--muted);font-size:.76rem;line-height:1.4}
+.dis b{font-weight:600}
 .prog{height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-bottom:1rem}
 .prog i{display:block;height:100%;background:var(--primary);transition:width .25s}
 @media (prefers-reduced-motion:reduce){.prog i{transition:none}}
@@ -75,64 +79,68 @@ input[type=text],input[type=number],select,textarea{font-family:inherit;font-siz
 .verdict.ph .kind{color:var(--primary-ink)}
 .flags{display:flex;flex-direction:column;gap:.35rem;margin:0;padding:0;list-style:none}
 .flags li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.45rem .7rem;font-size:.92rem}
+.drug{border:1px solid var(--line);border-radius:11px;padding:.6rem .8rem;background:var(--surface)}
+.drug b{display:block;font-weight:600}
+.drug span{font-size:.88rem;color:var(--muted)}
+.drug.bad{border-color:var(--danger);background:var(--danger-soft)}
+.drug.bad span{color:var(--fg)}
 .place{display:grid;grid-template-columns:1fr auto;gap:.2rem .6rem;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.65rem .8rem}
 .place .nm{font-weight:600}
 .place .meta{color:var(--muted);font-size:.84rem;grid-column:1}
 .place .km{font-variant-numeric:tabular-nums;color:var(--primary-ink);background:var(--primary-soft);border-radius:8px;padding:.15rem .5rem;font-size:.84rem;grid-row:1;grid-column:2}
 .place a{grid-column:2;grid-row:2;font-size:.86rem;color:var(--primary);text-decoration:none;font-weight:500;white-space:nowrap}
-.tag{display:inline-block;font-size:.72rem;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:.1rem .55rem}
+.tag{display:inline-block;font-size:.72rem;letter-spacing:.4px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:.1rem .55rem;width:max-content}
 pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:.7rem;overflow-x:auto;font-size:.78rem;direction:ltr;text-align:left;max-height:16rem}
 footer{margin-top:2rem;color:var(--muted);font-size:.8rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between}
-.ai{font-size:.78rem;color:var(--muted);display:flex;gap:.35rem;align-items:center}
+.ai{font-size:.78rem;color:var(--muted)}
+.out{white-space:pre-wrap;background:var(--surface-2);border-radius:11px;padding:.75rem}
 </style>
 
 <div id="app" dir="rtl" lang="ar">
   <header class="top">
-    <div class="mark" aria-hidden="true">ص</div>
+    <div class="mark" aria-hidden="true">Rx</div>
     <div>
-      <h1>صيدلي جيبي</h1>
-      <div class="sub">نموذج تجريبي (Pilot) — تقييم الإسهال وتوجيه المريض: صيدلية لو طبيب</div>
+      <h1>Patient Rx</h1>
+      <div class="sub">نموذج تجريبي (Pilot) — تقييم الأعراض البسيطة وتوجيه المريض: صيدلية لو طبيب</div>
     </div>
   </header>
 
-  <!-- 1. intro -->
   <section id="s-intro" class="stack">
     <div id="resume" class="card" hidden>
       <h2>عندك حالة مفتوحة</h2>
       <p id="resume-txt" class="sub"></p>
       <div class="row">
-        <button class="btn" id="go-followup">رجعت من الصيدلية</button>
+        <button class="btn" id="go-followup">رجعت من الصيدلية أو الطبيب</button>
         <button class="btn ghost" id="go-new">ابدأ حالة جديدة</button>
       </div>
     </div>
     <div class="card">
       <h2>شلون يشتغل؟</h2>
       <ul class="steps">
-        <li><b>١</b><span>نسألك أسئلة قصيرة عن الإسهال: المدة، عدد المرات، العلامات الخطرة، الأدوية والأمراض المزمنة.</span></li>
-        <li><b>٢</b><span>نقرر وياك: حالة بسيطة تنطيها صيدلي، لو أعراض خطرة تحتاج طبيب — ونوصلك لأقرب موقع.</span></li>
-        <li><b>٣</b><span>بعد ما ترجع من الصيدلية، تكتبلنا شنو انطاك الصيدلي ونشرحلك شلون تستخدمه، وبعدها نتابع وياك.</span></li>
+        <li><b>١</b><span>تختار منطقة الشكوى والمرض من قائمة ١٠ أمراض بسيطة.</span></li>
+        <li><b>٢</b><span>نسألك أسئلة قصيرة بالعراقي عن المدة والشدة والعلامات الخطرة والأدوية والأمراض المزمنة.</span></li>
+        <li><b>٣</b><span>نقرر وياك: حالة بسيطة تنطيها صيدلي، لو أعراض خطرة تحتاج طبيب — ونوصلك لأقرب موقع، ونعرضلك أمثلة الأدوية الممكنة.</span></li>
+        <li><b>٤</b><span>بعد ما ترجع، تأشّر شنو انطاك الصيدلي أو الطبيب ونشرحلك شلون تستخدمه، وبعدها نتابع وياك النتيجة.</span></li>
       </ul>
     </div>
-    <div class="note">هذا نموذج بحثي للتجربة والتقييم فقط، وما يغني عن الصيدلي أو الطبيب. إذا الحالة شديدة أو أكو دم أو جفاف واضح، روح للطبيب أو الطوارئ مباشرة.</div>
+    <div class="note">هذا نموذج بحثي للتجربة والتقييم فقط، وما يغني عن الصيدلي أو الطبيب. إذا الحالة شديدة أو أكو دم أو ضيق نفس، روح للطوارئ مباشرة.</div>
     <button class="btn block" id="start">ابدأ التقييم</button>
   </section>
 
-  <!-- 2. chat -->
+  <section id="s-pick" class="stack" hidden></section>
+
   <section id="s-chat" hidden>
     <div class="prog"><i id="bar" style="width:0%"></i></div>
     <div id="log" aria-live="polite"></div>
     <div id="ans" class="row"></div>
   </section>
 
-  <!-- 3. result -->
   <section id="s-result" class="stack" hidden></section>
-
-  <!-- 4. follow-up -->
   <section id="s-follow" class="stack" hidden></section>
 
   <footer>
-    <span>بيانات الصيدليات والأطباء بالنموذج تجريبية (Demo).</span>
-    <button class="btn ghost" id="exp">بيانات الحالة (للباحث)</button>
+    <span>بيانات الصيدليات والأطباء تجريبية (Demo).</span>
+    <button class="btn ghost" id="exp">بيانات الحالات (للباحث)</button>
   </footer>
   <div id="expbox" hidden></div>
 </div>
@@ -144,12 +152,100 @@ var $=function(s){return document.querySelector(s)};
 var el=function(t,c,x){var n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n};
 function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
 
-/* ---------- questions (Iraqi Arabic, WWHAM + diarrhea-specific) ---------- */
-var Q=[
- {id:'who',t:'هلو. هاي الحالة إلك إنت لو لشخص ثاني؟',o:[['me','إلي آني'],['child','لطفل'],['other','لشخص ثاني']]},
+/* ================= 10 minor ailments ================= */
+/* Only diarrhoea carries the full question set + referral rules (the pilot ailment).
+   The other nine run the shared engine: common questions + their own red-flag list. */
+var DIS=[
+{id:'diarrhea',g:'الجهاز الهضمي',n:'إسهال',s:'براز سائل وتكرار للحمام',full:true,
+ dr:[
+  {n:'أملاح معالجة الجفاف (ORS)',kw:/ors|اورس|أورس|محلول|جفاف|هيدرا/i,t:'أهم علاج بالإسهال لكل الأعمار. حله بماي بس (مغلي ومبرّد للطفل أقل من سنة)، واشربه بعد كل مرة إسهال: ٢٠٠–٤٠٠ مل للكبار، ٢٠٠ مل للطفل فوق سنة، وللرضيع ١–١.٥ ضعف حجم الرضعة. ينرفع بعد ساعة من التحضير أو يبقى ٢٤ ساعة بالثلاجة.'},
+  {n:'زنك (للأطفال)',kw:/زنك|zinc/i,t:'للأطفال بس: ١٠ ملغم يومياً إذا أقل من ٦ أشهر، و٢٠ ملغم إذا أكبر، لمدة ١٠–١٤ يوم. يقلل شدة ومدة الإسهال.'},
+  {n:'بروبايوتك (لاكتوباسيلس)',kw:/بروبايوتك|probiotic|لاكتو/i,t:'بكتيريا نافعة تقلل مدة الإسهال الحاد والإسهال بسبب المضادات الحيوية. خذه بفاصل ساعتين عن المضاد الحيوي.'},
+  {n:'لوبرامايد',min:12,kw:/لوبرامايد|loperamide|ايمودي|إيمودي|imodium/i,t:'يوقف الإسهال بس ما يعالج السبب. للـ١٢ سنة فما فوق: حبتين (٤ ملغم) بالبداية، وبعدها حبة (٢ ملغم) بعد كل إسهال، ومو أكثر من ٨ حبوب باليوم. ممنوع إذا أكو دم بالبراز أو حرارة عالية.'},
+  {n:'كاولين وبكتين (بكتوكاولين)',kw:/كاولين|بكتو|kaolin|pecto/i,t:'ماكو دليل علمي كافي يدعم فائدته بالإسهال الحاد. الأفضل التركيز على السوائل ومحلول الجفاف.'},
+  {n:'ميترونيدازول (فلاجيل)',kw:/فلاجيل|ميترو|metronidazole|flagyl/i,t:'مضاد حيوي للطفيليات مثل الأميبا والجيارديا، ما ينطى لكل إسهال. يؤخذ بعد الأكل حتى يقلل الغثيان، وممنوع الكحول وياه. إذا انطوك إياه بدون تحليل براز، اسأل ليش وراجع طبيب إذا الإسهال مستمر.'}]},
+
+{id:'constipation',g:'الجهاز الهضمي',n:'إمساك',s:'صعوبة أو قلة بالتبرّز',ts:'أسبوع',
+ rf:['دم وياه البراز','تغيّر مستمر بطبيعة التبرّز أكثر من أسبوعين','نزول وزن بدون سبب','وجع بطن شديد أو انتفاخ وياه استفراغ','إمساك مستمر رغم استخدام ملين','بدأ بعد دوا جديد','طفل رضيع عنده إمساك'],
+ dr:[
+  {n:'ملين كتلي (إيسباغولا)',kw:/ايسباغ|إيسباغ|سيليوم|fybo|كتلي/i,t:'يزيد حجم البراز ويليّنه. لازم تشرب وياه ماي كثير وإلا يزيد الإمساك. مفعوله خلال ٢–٣ أيام.'},
+  {n:'لاكتولوز',kw:/لاكتولوز|lactulose/i,t:'شراب يسحب الماي للأمعاء. الكبار ١٥ مل مرتين باليوم. ممكن يسبب غازات وانتفاخ بالبداية. مفعوله خلال ١–٣ أيام.'},
+  {n:'ماكروغول (أكياس)',kw:/ماكروغول|موفيكول|macrogol|movicol|peg/i,t:'يذوب بالماي ويليّن البراز، مناسب للاستخدام القصير وللأطفال بجرعة حسب العمر.'},
+  {n:'بيساكوديل أو سنا',kw:/بيساكوديل|سنا|senna|bisacodyl|دولكولاكس/i,t:'منبه لحركة الأمعاء، يؤخذ بالليل ويشتغل خلال ٦–١٢ ساعة. للاستخدام القصير بس — الاستعمال الطويل يكسل الأمعاء.'},
+  {n:'تحميلة جلسرين',kw:/جلسرين|تحميلة|glycerin/i,t:'موضعية للتفريغ السريع، مفعولها خلال ١٥–٦٠ دقيقة، ومناسبة للأطفال.'}]},
+
+{id:'dyspepsia',g:'الجهاز الهضمي',n:'حرقة وعسر هضم',s:'حرقة بالصدر، امتلاء، غازات',ts:'أسبوعين',
+ rf:['صعوبة أو وجع عند البلع','استفراغ متكرر أو استفراغ دم','براز أسود','نزول وزن بدون سبب','وجع صدر ينتشر للذراع أو الفك أو وياه تعرق','العمر فوق ٥٥ والأعراض جديدة','أعراض مستمرة أكثر من أسبوعين رغم العلاج'],
+ dr:[
+  {n:'مضاد حموضة (ألمونيوم/مغنيسيوم)',kw:/مضاد حموضة|انتاسيد|antacid|مالوكس|جلوكو/i,t:'يعادل الحامض بسرعة، يؤخذ بعد الأكل وقبل النوم. المغنيسيوم ممكن يسبب إسهال والألمونيوم إمساك. باعده ساعتين عن باقي الأدوية.'},
+  {n:'ألجينات (جافيسكون)',kw:/جافيسكون|الجين|gaviscon|algin/i,t:'يسوي طبقة فوق محتوى المعدة ويمنع الارتجاع. يؤخذ بعد الأكل وقبل النوم، ومناسب للحامل.'},
+  {n:'فاموتيدين',kw:/فاموتيدين|famotidine/i,t:'يقلل إفراز الحامض ومفعوله أطول من مضاد الحموضة. يؤخذ قبل النوم أو قبل الوجبة الدسمة.'},
+  {n:'أوميبرازول',kw:/اوميبرازول|أوميبرازول|omeprazole|بانتو|نيكسيوم/i,t:'يقلل الحامض بقوة. يؤخذ قبل الفطور بنص ساعة، ولمدة قصيرة (أسبوع–أسبوعين) بدون وصفة. إذا رجعت الأعراض بعد الإيقاف راجع طبيب.'}]},
+
+{id:'cough',g:'الصدر والأنف والحلق',n:'سعال',s:'ناشف أو وياه بلغم',ts:'أسبوع',
+ rf:['سعال مستمر أكثر من ٣ أسابيع','بلغم فيه دم','ضيق نفس أو صفير بالصدر','وجع صدر','حرارة عالية مستمرة','نزول وزن أو تعرق ليلي','مريض ربو أو صدري مزمن وتدهورت حالته','طفل رضيع يلهث أو يسحب صدره'],
+ dr:[
+  {n:'غوايفينيسين (طارد بلغم)',kw:/غوايف|طارد|guaifenesin|ميوكو/i,t:'يخفف لزوجة البلغم ويساعد على طلعته. اشرب ماي كثير وياه.'},
+  {n:'ديكستروميثورفان (مهدئ سعال)',min:6,kw:/ديكسترو|dextro|مهدئ/i,t:'للسعال الناشف المزعج بالليل. ما ينطى للأطفال أقل من ٦ سنوات، ولا يستخدم إذا أكو بلغم كثير.'},
+  {n:'عسل وماي دافي',min:1,kw:/عسل|honey/i,t:'يهدي السعال وياخذه الأطفال فوق سنة. ممنوع للطفل أقل من سنة.'},
+  {n:'محلول ملحي للأنف',kw:/ملحي|saline|سالين/i,t:'ينظف الأنف ويقلل تنقيط الإفرازات للحلق. آمن لكل الأعمار.'}]},
+
+{id:'sorethroat',g:'الصدر والأنف والحلق',n:'التهاب حلق ونزلة برد',s:'وجع حلق، زكام، عطاس',ts:'أسبوع',
+ rf:['صعوبة بالبلع أو بفتح الحلق','صعوبة تنفس أو تغيّر الصوت','حرارة عالية أكثر من ٣ أيام','تورم بالرقبة','طفح جلدي وياه','الأعراض تزداد بعد أسبوع','مناعة ضعيفة'],
+ dr:[
+  {n:'باراسيتامول',kw:/باراسيتامول|بنادول|paracetamol|panadol/i,t:'للوجع والحرارة. الكبار ٥٠٠–١٠٠٠ ملغم كل ٦ ساعات ومو أكثر من ٤ غرام باليوم. الأطفال حسب الوزن.'},
+  {n:'أقراص استحلاب للحلق',min:6,kw:/استحلاب|لوزنج|lozenge|ستربسلز/i,t:'تهدي وجع الحلق مؤقتاً. ما تنطى للأطفال الصغار خوف الاختناق.'},
+  {n:'غرغرة ماي وملح دافي',kw:/غرغرة|ملح/i,t:'بسيطة وفعالة لتخفيف الوجع، مرتين لثلاث مرات باليوم.'},
+  {n:'بخاخ أنف مزيل احتقان',min:12,kw:/مزيل احتقان|بخاخ|اوتريفين|xylo/i,t:'يفتح الأنف بسرعة، بس ما يستخدم أكثر من ٥–٧ أيام حتى ما يصير احتقان ارتدادي.'}]},
+
+{id:'headache',g:'الراس والحرارة',n:'صداع',s:'وجع راس أو شقيقة',ts:'يومين',
+ rf:['صداع فجائي شديد جداً مثل الضربة','صداع وياه حرارة وتيبّس رقبة','ضعف أو تنميل أو تشوش بالكلام أو النظر','صداع بعد ضربة على الراس','صداع يصحّيك من النوم أو يزيد بالسعال','صداع جديد بعد عمر ٥٠','حامل وعندها صداع شديد أو تورم','صداع شبه يومي وتاخذ مسكنات أكثر من ١٥ يوم بالشهر'],
+ dr:[
+  {n:'باراسيتامول',kw:/باراسيتامول|بنادول|paracetamol|panadol/i,t:'الخيار الأول. الكبار ٥٠٠–١٠٠٠ ملغم كل ٦ ساعات، ومو أكثر من ٤ غرام باليوم.'},
+  {n:'آيبوبروفين',kw:/ايبوبروفين|آيبو|ibuprofen|بروفين/i,t:'مسكن ومضاد التهاب، يؤخذ بعد الأكل. تجنبه إذا عندك قرحة معدة أو مشاكل كلى أو ربو حساس للمسكنات أو حامل بالثلث الأخير.'},
+  {n:'كافيين + مسكن (مركب)',min:16,kw:/كافيين|caffe|سولبادين/i,t:'ممكن يساعد بالصداع الشديد، بس الاستخدام المتكرر يسبب صداع ارتدادي. لا تستخدمه أكثر من يومين بالأسبوع.'}]},
+
+{id:'fever',g:'الراس والحرارة',n:'حرارة',s:'ارتفاع درجة الحرارة',ts:'٣ أيام',
+ rf:['طفل أقل من ٣ أشهر عنده حرارة','حرارة مستمرة أكثر من ٣ أيام','تيبّس رقبة أو طفح ما يختفي بالضغط','خمول شديد أو تشنج','صعوبة تنفس','مناعة ضعيفة أو مرض مزمن','رجوع حديث من سفر لمنطقة ملاريا'],
+ dr:[
+  {n:'باراسيتامول',kw:/باراسيتامول|بنادول|paracetamol|panadol/i,t:'الأطفال ١٠–١٥ ملغم لكل كيلو كل ٦ ساعات. الكبار ٥٠٠–١٠٠٠ ملغم كل ٦ ساعات.'},
+  {n:'آيبوبروفين',kw:/ايبوبروفين|آيبو|ibuprofen|بروفين/i,t:'بديل للباراسيتامول، يؤخذ بعد الأكل. تجنبه إذا أكو جفاف أو استفراغ أو مشاكل كلى.'},
+  {n:'سوائل وكمادات فاترة',kw:/سوائل|كمادات|ماي/i,t:'الأهم سوائل كافية وراحة. استخدم ماي فاتر للكمادات، مو بارد ولا كحول.'}]},
+
+{id:'allergy',g:'الصدر والأنف والحلق',n:'حساسية الأنف والعين',s:'عطاس، حكة، دموع',ts:'أسبوعين',
+ rf:['ضيق نفس أو صفير بالصدر','وجع أو احمرار شديد بالعين أو ضعف نظر','إفرازات صديدية من العين','الأعراض ما تتحسن رغم العلاج','طفل أقل من سنتين','حامل أو مرضعة'],
+ dr:[
+  {n:'سيتريزين أو لوراتادين',kw:/سيتريزين|لوراتادين|cetirizine|loratadine|زيرتك/i,t:'مضاد هستامين ما يسبب نعاس كثير، حبة وحدة باليوم. للأطفال شراب حسب العمر.'},
+  {n:'بخاخ أنف كورتيزون',min:12,kw:/فلوتيكازون|بخاخ كورتيزون|nasonex|fluticasone/i,t:'أقوى علاج لحساسية الأنف. يحتاج ٣–٧ أيام حتى يبيّن مفعوله، فلازم يستخدم بانتظام مو عند الحاجة بس.'},
+  {n:'قطرة عين مضاد هستامين',kw:/قطرة|عين|eye drop/i,t:'للحكة والدموع. لا تستخدمها إذا أكو وجع شديد بالعين أو ضعف نظر — هذي تحتاج طبيب.'},
+  {n:'محلول ملحي للأنف',kw:/ملحي|saline/i,t:'يغسل الغبار وحبوب اللقاح، آمن ويستخدم قبل البخاخ.'}]},
+
+{id:'skin',g:'الجلد والفم',n:'طفح وحكة بالجلد',s:'احمرار، حكة، جفاف',ts:'أسبوعين',
+ rf:['طفح ما يختفي بالضغط وياه حرارة','تورم بالوجه أو الشفايف أو صعوبة تنفس','الطفح ينتشر بسرعة أو فيه تقيح','يشمل العين أو المنطقة التناسلية','مستمر أكثر من أسبوعين بدون تحسن','مريض سكري وعنده جرح أو التهاب بالقدم'],
+ dr:[
+  {n:'مرطب (إيمولينت)',kw:/مرطب|إيمولينت|emolli|فازلين/i,t:'أساس علاج الجفاف والإكزيما. استخدمه عدة مرات باليوم وبعد الحمام مباشرة.'},
+  {n:'هيدروكورتيزون ١٪ كريم',min:10,kw:/هيدروكورتيزون|كورتيزون|hydrocortisone/i,t:'كورتيزون ضعيف للالتهاب والحكة. طبقة رقيقة مرتين باليوم ولمدة أسبوع بالكثير. ما يستخدم على الوجه أو الجروح أو للأطفال الصغار بدون استشارة.'},
+  {n:'كلوتريمازول (مضاد فطريات)',kw:/كلوتريمازول|فطريات|clotrimazole|كانستين/i,t:'للطفح الفطري بين الأصابع أو بالثنيات. مرتين باليوم، ويستمر أسبوعين حتى بعد ما يختفي الطفح.'},
+  {n:'مضاد هستامين فموي',kw:/هستامين|سيتريزين|كلورفين/i,t:'يقلل الحكة، خصوصاً بالليل.'}]},
+
+{id:'ulcer',g:'الجلد والفم',n:'قرحة فم',s:'تقرحات داخل الفم',ts:'أسبوعين',
+ rf:['قرحة مستمرة أكثر من ٣ أسابيع','قرحة كبيرة أو قرح كثيرة تتكرر','نزول وزن أو تعب عام','قرح وياها طفح بأماكن ثانية بالجسم','بدأت بعد دوا جديد أو علاج كيمياوي','صعوبة بالأكل والشرب'],
+ dr:[
+  {n:'جل مخدر موضعي',kw:/مخدر|جل|بنزوكائين|ليدو|gel/i,t:'يخدر القرحة مؤقتاً، استخدمه قبل الأكل.'},
+  {n:'غسول كلورهيكسيدين',kw:/كلورهيكس|غسول|chlorhex/i,t:'يقلل الالتهاب والتلوث، مرتين باليوم وبفاصل نص ساعة عن تنظيف الأسنان. الاستخدام الطويل يصبغ الأسنان.'},
+  {n:'معجون كورتيزون موضعي للفم',kw:/معجون|كورتيزون|تريامسينولون/i,t:'يقصّر مدة القرحة. يوضع على القرحة مباشرة بعد التجفيف.'},
+  {n:'مسكن بسيط',kw:/مسكن|باراسيتامول|بنادول/i,t:'باراسيتامول إذا الوجع مزعج ويمنعك من الأكل.'}]}
+];
+function disById(id){for(var i=0;i<DIS.length;i++)if(DIS[i].id===id)return DIS[i];return null}
+
+/* ================= question engine ================= */
+var QHEAD=[
+ {id:'who',t:function(a){return 'هلو. هاي الحالة إلك إنت لو لشخص ثاني؟'},o:[['me','إلي آني'],['child','لطفل'],['other','لشخص ثاني']]},
  {id:'sex',t:'ذكر لو أنثى؟',o:[['m','ذكر'],['f','أنثى']]},
  {id:'age',type:'num',t:'شكد العمر بالسنين؟ (إذا أقل من سنة اكتب 0)',min:0,max:110},
- {id:'months',type:'num',when:function(a){return a.age===0},t:'شكد عمره بالأشهر؟',min:0,max:11},
+ {id:'months',type:'num',when:function(a){return a.age===0},t:'شكد عمره بالأشهر؟',min:0,max:11}
+];
+var QDIA=[
  {id:'duration',t:'من شكد مدة بدا الإسهال؟',o:[[0.5,'من اليوم (أقل من ٢٤ ساعة)'],[1,'يوم واحد'],[2,'يومين'],[3,'٣ أيام'],[7,'من ٤ أيام لأسبوعين'],[20,'أكثر من أسبوعين']]},
  {id:'freq',t:'شكد مرة رحت للحمام (إسهال) بالـ٢٤ ساعة الماضية؟',o:[['<3','أقل من ٣ مرات'],['3-5','٣ لـ ٥ مرات'],['6+','٦ مرات أو أكثر']]},
  {id:'blood',t:'أكو دم أو مخاط (مادة لزجة) وياه البراز؟',o:[['yes','نعم'],['no','لا'],['unsure','ما انتبهت']]},
@@ -163,30 +259,67 @@ var Q=[
  {id:'travel',t:'سافر خارج العراق بالأسبوعين الماضية؟',o:[['yes','نعم'],['no','لا']]},
  {id:'abx',t:'ياخذ مضاد حيوي (أنتي بايوتك) هسه، أو خلّص كورس مضاد قبل مدة قريبة؟',o:[['yes','نعم'],['no','لا']]},
  {id:'meds',type:'multi',t:'ياخذ أي واحد من هذي الأدوية؟',o:[['mg','مضاد حموضة فيه مغنيسيوم'],['lax','ملينات'],['met','ميتفورمين (السكري)'],['nsaid','مسكن التهاب مثل آيبوبروفين'],['fe','حبوب الحديد'],['ppi','أوميبرازول أو شبهه'],['arb','دوا ضغط (فالسارتان/لوسارتان)'],['dig','ديجوكسين'],['col','كولشيسين'],['chemo','علاج كيمياوي أو ميثوتركسيت'],['allo','ألوبيورينول'],['ssri','مضاد اكتئاب (SSRI)']]},
+ {id:'outbreak',t:'أكو أحد ثاني أكل نفس الأكل وصارت عنده نفس الحالة؟',o:[['yes','نعم'],['no','لا'],['unsure','ما أعرف']]}
+];
+function qGen(d){return [
+ {id:'duration',t:'من شكد مدة بديت تحس بالأعراض؟',o:[[0.5,'من اليوم'],[1,'يوم واحد'],[2,'يومين'],[3,'٣ أيام'],[7,'من ٤ أيام لأسبوعين'],[20,'أكثر من أسبوعين']]},
+ {id:'severity',t:'شكد الأعراض مزعجة؟',o:[['mild','خفيفة'],['mod','متوسطة'],['severe','شديدة وتمنعني من شغلي أو نومي']]},
+ {id:'rf',type:'multi',t:'أشّر على أي وحدة من هذي موجودة (هذي العلامات اللي تحتاج طبيب):',o:d.rf.map(function(x,i){return ['r'+i,x]})},
+ {id:'othermeds',type:'text',t:'ياخذ أدوية مزمنة أو دوا جديد هاي الفترة؟ (اكتبها أو تخطى)',ph:'مثلاً: دوا ضغط، أنسولين...'}
+]}
+var QTAIL=[
+ {id:'recurrent',t:'هاي الحالة تتكرر وياه كثير أو صار تغيّر مستمر بالأعراض؟',o:[['yes','نعم'],['no','لا']]},
  {id:'cond',type:'multi',t:'أكو وحدة من هذي الحالات؟',o:function(a){var l=[['dm','سكري'],['ibd','مرض أمعاء مزمن (كرون أو التهاب القولون التقرحي)'],['immu','مناعة ضعيفة (كيمياوي، كورتزون طويل المدة، HIV)'],['chronic','مرض مزمن ثقيل (قلب، كلى، كبد)']];
    if(a.sex==='f'&&ageYears(a)>=12&&ageYears(a)<=55)l.push(['preg','حامل']); return l}},
- {id:'recurrent',t:'هاي الحالة تتكرر وياه كثير، أو صار تغيّر مستمر بطبيعة التبرّز؟',o:[['yes','نعم'],['no','لا']]},
- {id:'outbreak',t:'أكو أحد ثاني أكل نفس الأكل وصارت عنده نفس الحالة؟',o:[['yes','نعم'],['no','لا'],['unsure','ما أعرف']]},
- {id:'tried',type:'text',t:'استخدمت أي دوا أو شي للإسهال لحد الآن؟ (اكتب الاسم أو اضغط تخطي)',ph:'مثلاً: فلاجيل، أورس، إيموديوم...'},
+ {id:'tried',type:'text',t:'استخدمت أي دوا أو شي لحد الآن؟ (اكتب الاسم أو اضغط تخطي)',ph:'مثلاً: بنادول، أورس...'},
  {id:'notes',type:'text',t:'أي شي ثاني تحب تذكره عن الحالة؟',ph:'اختياري'}
 ];
-var LBL={};Q.forEach(function(q){var o=typeof q.o==='function'?null:q.o;if(o)o.forEach(function(p){LBL[q.id+':'+p[0]]=p[1]})});
-function lbl(qid,v){return LBL[qid+':'+v]||v}
+var LBL={},Q=[],qi=0;
 function opts(q,a){var o=(typeof q.o==='function'?q.o(a):q.o)||[];o.forEach(function(p){LBL[q.id+':'+p[0]]=p[1]});return o}
+function lbl(qid,v){return LBL[qid+':'+v]||v}
 function ageYears(a){return a.age===0?(a.months||0)/12:(a.age||0)}
 function ageMonths(a){return a.age===0?(a.months||0):(a.age||0)*12}
+function buildQ(d){return QHEAD.concat(d.full?QDIA:qGen(d),QTAIL)}
 
-/* ---------- case state ---------- */
-var C=null,qi=0;
-function newCase(){C={id:'C'+Date.now(),started:new Date().toISOString(),a:{},flags:[],verdict:null,followup:null};qi=0;save()}
+/* ================= case state ================= */
+var C=null;
+function newCase(d){C={id:'C'+Date.now(),started:new Date().toISOString(),dis:d?d.id:null,disName:d?d.n:null,a:{},flags:[],verdict:null,followup:null};qi=0;save()}
 function save(){store('sj_case',C)}
 function logCase(){var all=store('sj_log')||[];all=all.filter(function(x){return x.id!==C.id});all.push(C);store('sj_log',all)}
+function show(id){['s-intro','s-pick','s-chat','s-result','s-follow'].forEach(function(s){$('#'+s).hidden=(s!==id)});window.scrollTo(0,0)}
 
-/* ---------- chat ---------- */
-function show(id){['s-intro','s-chat','s-result','s-follow'].forEach(function(s){$('#'+s).hidden=(s!==id)});window.scrollTo(0,0)}
+/* ================= 1. pick the complaint ================= */
+function pick(){
+  var s=$('#s-pick');s.innerHTML='';
+  var head=el('div','card');
+  head.appendChild(el('h2',null,'وين الشكوى؟ اختار حالتك'));
+  head.appendChild(el('p','sub','النموذج التجريبي يغطي ١٠ أمراض بسيطة. الإسهال مكتمل بكل أسئلته ومعاييره كمثال، والباقي يشتغل بنفس المحرك بعلاماته الخطرة — وتنضافله الأسئلة التفصيلية بعد اعتماد المحتوى من لجنة الخبراء.'));
+  s.appendChild(head);
+  var groups=[];DIS.forEach(function(d){if(groups.indexOf(d.g)<0)groups.push(d.g)});
+  groups.forEach(function(g){
+    var c=el('div','card');c.appendChild(el('h3',null,g));
+    var grid=el('div','grid');
+    DIS.filter(function(d){return d.g===g}).forEach(function(d){
+      var b=el('button','opt');
+      var w=el('div','dis');w.appendChild(el('b',null,d.n));w.appendChild(el('small',null,d.s));
+      w.appendChild(el('span','tag',d.full?'نموذج مكتمل':'هيكل عام'));
+      b.appendChild(w);b.onclick=function(){begin(d)};grid.appendChild(b);
+    });
+    c.appendChild(grid);s.appendChild(c);
+  });
+  var back=el('button','btn ghost','رجوع');back.onclick=function(){show('s-intro')};s.appendChild(back);
+  show('s-pick');
+}
+function begin(d){
+  newCase(d);Q=buildQ(d);qi=0;
+  $('#log').innerHTML='';show('s-chat');
+  bubble('bot','زين، نحجي عن: '+d.n+'.');
+  next();
+}
+
+/* ================= 2. chat ================= */
 function bubble(who,txt){var b=el('div','b '+who,txt);$('#log').appendChild(b);b.scrollIntoView({block:'end',behavior:'smooth'});return b}
 function bar(){$('#bar').style.width=Math.round(qi/Q.length*100)+'%'}
-
 function next(){
   while(qi<Q.length && Q[qi].when && !Q[qi].when(C.a)) qi++;
   if(qi>=Q.length) return finish();
@@ -209,8 +342,8 @@ function ask(q){
     t.onkeydown=function(e){if(e.key==='Enter')ok.click()};
     ans.append(t,ok,sk);t.focus();
   } else if(q.type==='multi'){
-    var sel=[],list=opts(q,C.a);
-    list.forEach(function(p){
+    var sel=[];
+    opts(q,C.a).forEach(function(p){
       var b=el('button','opt',p[1]);b.setAttribute('aria-pressed','false');
       b.onclick=function(){var i=sel.indexOf(p[0]);if(i<0){sel.push(p[0]);b.setAttribute('aria-pressed','true')}else{sel.splice(i,1);b.setAttribute('aria-pressed','false')}
         done.textContent=sel.length?'تمام ('+sel.length+')':'ماكو شي من هذا'};
@@ -227,8 +360,9 @@ function ask(q){
 }
 function take(q,val,label){C.a[q.id]=val;save();bubble('me',label);qi++;next()}
 
-/* ---------- triage (Symptoms in the Pharmacy / Community Pharmacy 2026 referral criteria) ---------- */
-function assess(a){
+/* ================= 3. triage ================= */
+/* diarrhoea: referral criteria from COMMUNITY PHARMACY-2026 / Symptoms in the Pharmacy */
+function assessDia(a){
   var f=[],m=ageMonths(a),y=ageYears(a),d=+a.duration,cond=a.cond||[],meds=a.meds||[],dh=a.dehyd||[];
   var has=function(k){return cond.indexOf(k)>-1};
   if(m<3) f.push('العمر أقل من ٣ أشهر — الإسهال بهذا العمر يحتاج طبيب فوراً');
@@ -248,38 +382,58 @@ function assess(a){
   if(a.abx==='yes') f.push('إسهال وياه مضاد حيوي أو بعد كورس مضاد حيوي');
   if(meds.length) f.push('أدوية ممكن تسبب الإسهال: '+meds.map(function(v){return lbl('meds',v)}).join('، '));
   if(has('ibd')) f.push('مرض أمعاء مزمن');
+  if(a.outbreak==='yes') f.push('يشتبه تسمم غذائي (أكثر من شخص مصاب)');
+  return f.concat(common(a));
+}
+function assessGen(a,d){
+  var f=[],y=ageYears(a),dur=+a.duration;
+  (a.rf||[]).forEach(function(v){f.push(lbl('rf',v))});
+  if(a.severity==='severe') f.push('الأعراض شديدة وتمنعه من شغله أو نومه');
+  if(dur>=14) f.push('الأعراض مستمرة أكثر من أسبوعين');
+  return f.concat(common(a));
+}
+function common(a){
+  var f=[],cond=a.cond||[],m=ageMonths(a),has=function(k){return cond.indexOf(k)>-1};
+  if(m<3) f.push('العمر أقل من ٣ أشهر');
   if(has('immu')) f.push('مناعة ضعيفة');
   if(has('chronic')) f.push('مرض مزمن ثقيل');
   if(has('preg')) f.push('حامل');
-  if(a.recurrent==='yes') f.push('الإسهال يتكرر أو أكو تغيّر مستمر بطبيعة التبرّز');
-  if(a.outbreak==='yes') f.push('يشتبه تسمم غذائي (أكثر من شخص مصاب)');
-  return f;
+  if(a.recurrent==='yes') f.push('الحالة تتكرر أو أكو تغيّر مستمر بالأعراض');
+  return f.filter(function(v,i,s){return s.indexOf(v)===i});
 }
 function orsText(y){
   if(y<1) return 'محلول معالجة الجفاف (ORS): من ١ لـ ١.٥ ضعف حجم الرضعة المعتادة. استخدم ماي مغلي ومبرّد للأطفال أقل من سنة.';
   if(y<12) return 'محلول معالجة الجفاف (ORS): ٢٠٠ مل بعد كل مرة إسهال.';
-  if(y<18) return 'محلول معالجة الجفاف (ORS): ٢٠٠–٤٠٠ مل بعد كل مرة إسهال حسب كمية السوائل اللي تنزل.';
   return 'محلول معالجة الجفاف (ORS): ٢٠٠–٤٠٠ مل بعد كل مرة إسهال حسب كمية السوائل اللي تنزل.';
 }
-function timescale(y){return y<12?'٢٤ ساعة':'يومين'}
-
-/* ---------- result ---------- */
+function timescale(){var d=disById(C.dis);if(d&&d.full)return ageYears(C.a)<12?'٢٤ ساعة':'يومين';return (d&&d.ts)||'٣ أيام'}
 function finish(){
-  C.flags=assess(C.a);
+  var d=disById(C.dis);
+  C.flags=d.full?assessDia(C.a):assessGen(C.a,d);
+  C.flags=C.flags.filter(function(v,i,s){return s.indexOf(v)===i});
   C.verdict=C.flags.length?'doctor':'pharmacy';
   C.decidedAt=new Date().toISOString();
-  save();logCase();
-  render();
+  save();logCase();render();
+}
+
+/* ================= 4. result ================= */
+function drugCard(dr,y){
+  var bad=dr.min&&y<dr.min;
+  var c=el('div','drug'+(bad?' bad':''));
+  c.appendChild(el('b',null,(bad?'ما ينطى بهذا العمر: ':'')+dr.n));
+  c.appendChild(el('span',null,dr.t));
+  return c;
 }
 function render(){
-  var y=ageYears(C.a),s=$('#s-result');s.innerHTML='';
+  var d=disById(C.dis),y=ageYears(C.a),s=$('#s-result');s.innerHTML='';
+  s.appendChild(el('span','tag','الحالة: '+d.n));
   var v=el('div','verdict '+(C.verdict==='doctor'?'doc':'ph'));
   if(C.verdict==='doctor'){
     v.appendChild(el('div','kind','تحتاج تشوف طبيب'));
-    v.appendChild(el('p',null,'حالتك بيها علامات تحتاج فحص طبيب، مو بس دوا من الصيدلية. راجع طبيب باطنية أو طوارئ اليوم.'));
+    v.appendChild(el('p',null,'حالتك بيها علامات تحتاج فحص طبيب، مو بس دوا من الصيدلية. راجع طبيب اليوم، وإذا الأعراض شديدة روح للطوارئ.'));
   }else{
     v.appendChild(el('div','kind','حالة بسيطة — روح لصيدلية'));
-    v.appendChild(el('p',null,'ما لكينا علامات خطرة بحالتك. الأغلب إسهال بسيط ويروح لوحده. روح لصيدلي قريب وخذ العلاج المناسب، والأهم السوائل.'));
+    v.appendChild(el('p',null,'ما لكينا علامات خطرة بحالتك. روح لصيدلي قريب، اشرحله الأعراض والمدة، وخذ العلاج المناسب منه.'));
   }
   s.appendChild(v);
 
@@ -289,49 +443,51 @@ function render(){
   }
 
   var adv=el('div','card');
-  adv.appendChild(el('h2',null,'نصائح لازم تبدأ بيها هسه'));
+  adv.appendChild(el('h2',null,'نصائح تبدأ بيها هسه'));
   var u=el('ul');
-  [orsText(y),
-   'اشرب سوائل صافية بكثرة مثل الماي.',
-   'تجنّب المشروبات الحلوة والعصائر المركزة — تطوّل الإسهال.',
-   'تجنّب الحليب ومشتقاته فترة قصيرة — الأمعاء تصير حساسة للاكتوز.',
-   'الطفل الرضيع يكمل رضاعته طبيعي (ثدي أو حليب صناعي).'
-  ].forEach(function(t){u.appendChild(el('li',null,t))});
-  if(y<12) u.appendChild(el('li',null,'الزنك للأطفال: ١٠ ملغم يومياً إذا أقل من ٦ أشهر، و٢٠ ملغم إذا أكبر، لمدة ١٠–١٤ يوم — يقلل شدة ومدة الإسهال.'));
-  if(C.a.vomit!=='no') u.appendChild(el('li',null,'إذا أكو استفراغ: انطيه ملعقة صغيرة من المحلول كل عدة دقائق (١٠–٢٠ مل كل ٥–١٠ دقائق) بدل ما يشرب كمية كبيرة مرة وحدة.'));
-  u.appendChild(el('li',null,'المحلول بعد ما تحله: ينرفع بعد ساعة، أو يبقى ٢٤ ساعة إذا بالثلاجة.'));
-  if(C.verdict==='doctor') u.appendChild(el('li',null,'ابدأ بمحلول الجفاف حتى وإنت رايح للطبيب — ما ينتظر.'));
+  if(d.full){
+    [orsText(y),'اشرب سوائل صافية بكثرة مثل الماي.','تجنّب المشروبات الحلوة والعصائر المركزة — تطوّل الإسهال.',
+     'تجنّب الحليب ومشتقاته فترة قصيرة — الأمعاء تصير حساسة للاكتوز.','الطفل الرضيع يكمل رضاعته طبيعي (ثدي أو حليب صناعي).'
+    ].forEach(function(t){u.appendChild(el('li',null,t))});
+    if(y<12) u.appendChild(el('li',null,'الزنك للأطفال: ١٠ ملغم يومياً إذا أقل من ٦ أشهر، و٢٠ ملغم إذا أكبر، لمدة ١٠–١٤ يوم.'));
+    if(C.a.vomit!=='no') u.appendChild(el('li',null,'إذا أكو استفراغ: انطيه ملعقة صغيرة من المحلول كل عدة دقائق (١٠–٢٠ مل كل ٥–١٠ دقائق).'));
+    u.appendChild(el('li',null,'المحلول بعد ما تحله: ينرفع بعد ساعة، أو يبقى ٢٤ ساعة إذا بالثلاجة.'));
+    if(C.verdict==='doctor') u.appendChild(el('li',null,'ابدأ بمحلول الجفاف حتى وإنت رايح للطبيب — ما ينتظر.'));
+  }else{
+    ['اشرح للصيدلي أو الطبيب: من شكد مدة، شكد الأعراض شديدة، وشنو جربت لحد الآن.',
+     'انطيه قائمة أدويتك المزمنة وأي حساسية دوائية عندك.',
+     'راحة وسوائل كافية، وتجنّب الشي اللي تلاحظ إنه يزيد الأعراض.'
+    ].forEach(function(t){u.appendChild(el('li',null,t))});
+    u.appendChild(el('li',null,'إذا ما تحسنت خلال '+timescale()+'، راجع طبيب.'));
+  }
   adv.appendChild(u);s.appendChild(adv);
 
-  if(C.verdict==='pharmacy'){
-    var ph=el('div','card');ph.appendChild(el('h2',null,'اسأل الصيدلي عن'));
-    var u2=el('ul');
-    u2.appendChild(el('li',null,'أكياس ORS وشلون تحلها بالضبط.'));
-    if(y>=12) u2.appendChild(el('li',null,'لوبرامايد: حبتين (٤ ملغم) بالبداية وبعدها حبة (٢ ملغم) بعد كل إسهال، ومو أكثر من ٨ حبوب باليوم. ما ينطى للأطفال أقل من ١٢ سنة.'));
-    else u2.appendChild(el('li',null,'لوبرامايد ممنوع بهذا العمر — لا تنطيه للطفل. التركيز على السوائل والزنك.'));
-    u2.appendChild(el('li',null,'البروبايوتك (لاكتوباسيلس): يقلل مدة الإسهال، خصوصاً الإسهال بسبب المضادات.'));
-    u2.appendChild(el('li',null,'الكاولين والبكتين (بكتوكاولين): ماكو دليل علمي كافي يدعم استخدامه بالإسهال الحاد.'));
-    u2.appendChild(el('li',null,'المضاد الحيوي: أغلب حالات الإسهال فايروسية أو تسمم غذائي بسيط وما تحتاج مضاد حيوي.'));
-    ph.appendChild(u2);s.appendChild(ph);
-  }
+  var dc=el('div','card');
+  dc.appendChild(el('h2',null,C.verdict==='doctor'?'أدوية ممكن الطبيب يوصفها بهذي الحالة':'أدوية ممكن الصيدلي ينطيك إياها'));
+  dc.appendChild(el('p','sub',C.verdict==='doctor'
+    ?'هذي أمثلة للتثقيف بس حتى تعرف شنو تتوقع — لا تاخذ أي واحد منها قبل ما يفحصك الطبيب.'
+    :'هذي أمثلة شائعة للتثقيف — القرار النهائي للصيدلي حسب حالتك.'));
+  d.dr.forEach(function(x){dc.appendChild(drugCard(x,y))});
+  if(!d.full) dc.appendChild(el('span','tag','محتوى مبدئي — ينتظر اعتماد لجنة الخبراء'));
+  s.appendChild(dc);
 
   var warn=el('div','note');
-  warn.textContent='روح للطوارئ فوراً إذا: نزل دم بالبراز، أو ما قدرت تشرب شي بسبب الاستفراغ، أو البول توقف، أو صارت دوخة شديدة، أو حرارة عالية ما تنزل، أو الطفل خامل ما يستجيب.';
+  warn.textContent=d.full
+    ?'روح للطوارئ فوراً إذا: نزل دم بالبراز، أو ما قدرت تشرب شي بسبب الاستفراغ، أو البول توقف، أو صارت دوخة شديدة، أو الطفل خامل ما يستجيب.'
+    :'روح للطوارئ فوراً إذا: صعوبة تنفس، وجع صدر، نزيف، تشوش بالوعي أو الكلام، أو تدهور سريع بالحالة.';
   s.appendChild(warn);
 
   s.appendChild(places(C.verdict==='doctor'?'dr':'ph'));
 
   var fu=el('div','card');
   fu.appendChild(el('h2',null,'المتابعة'));
-  fu.appendChild(el('p',null,C.verdict==='pharmacy'
-    ?'إذا ما تحسنت خلال '+timescale(y)+'، راجع طبيب. وبعد ما ترجع من الصيدلية، اكتبلنا شنو انطاك الصيدلي ونشرحلك شلون تستخدمه.'
-    :'بعد مراجعة الطبيب، اكتبلنا شنو انطاك ونشرحلك شلون تستخدمه.'));
-  var b=el('button','btn','رجعت من الصيدلية / الطبيب');
+  fu.appendChild(el('p',null,'إذا ما تحسنت خلال '+timescale()+'، راجع طبيب. وبعد ما ترجع، أشّر شنو انطوك ونشرحلك شلون تستخدمه صح.'));
+  var b=el('button','btn','رجعت من الصيدلية أو الطبيب');
   b.onclick=followup;fu.appendChild(b);s.appendChild(fu);
   show('s-result');
 }
 
-/* ---------- places (demo data) ---------- */
+/* ================= places (demo data) ================= */
 var PLACES=[
  {k:'ph',n:'صيدلية الكوت المركزية',a:'الكوت — شارع الجمهورية',lat:32.5135,lng:45.8185,h:'٨ صباحاً – ١٢ ليلاً'},
  {k:'ph',n:'صيدلية دجلة',a:'الكوت — حي الزهراء',lat:32.5062,lng:45.8248,h:'٩ صباحاً – ١١ ليلاً'},
@@ -362,7 +518,7 @@ function places(kind){
   var list=el('div','stack');list.style.gap='.5rem';box.appendChild(list);
   function draw(lat,lng,from){
     var rows=PLACES.filter(function(p){return p.k===kind});
-    if(lat!=null){rows=rows.map(function(p){return Object.assign({},p,{d:km(lat,lng,p.lat,p.lng)})}).sort(function(a,b){return a.d-b.d})}
+    if(lat!=null){rows=rows.map(function(p){var o={};for(var k in p)o[k]=p[k];o.d=km(lat,lng,p.lat,p.lng);return o}).sort(function(a,b){return a.d-b.d})}
     list.innerHTML='';st.textContent=from||'';
     rows.slice(0,4).forEach(function(p){
       var r=el('div','place');
@@ -388,65 +544,75 @@ function places(kind){
   return box;
 }
 
-/* ---------- follow-up ---------- */
+/* ================= 5. follow-up: pick what was dispensed ================= */
 var sampler=null;
 if(window.claude&&claude.use){claude.use('sample').then(function(s){sampler=s}).catch(function(){})}
-var KB=[
- {re:/ors|اورس|أورس|محلول|معالجة الجفاف|هيدرا/i,t:'محلول معالجة الجفاف (ORS) — هذا أهم علاج للإسهال بكل الأعمار. حله بماي فقط (مغلي ومبرّد للطفل أقل من سنة)، واشربه بعد كل مرة إسهال. ينرفع بعد ساعة من التحضير، أو يبقى ٢٤ ساعة بالثلاجة.'},
- {re:/لوبرامايد|loperamide|ايمودي|إيمودي|imodium/i,t:'لوبرامايد — يوقف الإسهال بس ما يعالج السبب. للكبار: حبتين (٤ ملغم) بالبداية، وبعدها حبة (٢ ملغم) بعد كل إسهال، الحد الأعلى ٨ حبوب باليوم. ممنوع للأطفال أقل من ١٢ سنة، وما ينطى إذا أكو دم بالبراز أو حرارة عالية.'},
- {re:/زنك|zinc/i,t:'الزنك — للأطفال: ١٠ ملغم يومياً إذا أقل من ٦ أشهر، ٢٠ ملغم إذا أكبر، لمدة ١٠–١٤ يوم. يقلل شدة ومدة الإسهال.'},
- {re:/فلاجيل|ميترو|metronidazole|flagyl/i,t:'ميترونيدازول (فلاجيل) — مضاد حيوي للطفيليات مثل الأميبا والجيارديا. ما ينطى عشوائياً لكل إسهال. يؤخذ بعد الأكل حتى يقلل الغثيان، ويمنع الكحول وياه. إذا الصيدلي انطاك إياه بدون تحليل براز، اسأله ليش، وراجع طبيب إذا الإسهال مستمر.'},
- {re:/سيبرو|cipro|اموكسي|amox|زيثرو|azithro|مضاد حيوي/i,t:'المضاد الحيوي — أغلب حالات الإسهال الحاد فايروسية وتروح لوحدها بدون مضاد. الاستخدام غير الضروري يسبب إسهال إضافي ومقاومة بكتيرية. راجع طبيب قبل ما تكمل كورس مضاد حيوي للإسهال.'},
- {re:/بروبايوتك|probiotic|لاكتو|lacto|يوغرت/i,t:'البروبايوتك — مكمل غذائي فيه بكتيريا نافعة، يقلل مدة الإسهال الحاد والإسهال بسبب المضادات. ياخذه بفاصل ساعتين عن المضاد الحيوي.'},
- {re:/كاولين|بكتو|kaolin|pecto/i,t:'كاولين وبكتين (بكتوكاولين) — ماكو دليل علمي كافي يدعم فائدته بالإسهال الحاد. التركيز لازم يكون على السوائل.'},
- {re:/بنادول|باراسيتامول|paracetamol|panadol/i,t:'باراسيتامول — للحرارة والوجع. الكبار: ٥٠٠–١٠٠٠ ملغم كل ٦ ساعات، ومو أكثر من ٤ غرام باليوم. للأطفال حسب الوزن.'}
-];
 function followup(){
+  if(!C||!C.dis){show('s-intro');return}
+  var d=disById(C.dis),y=ageYears(C.a);
   C.followup=C.followup||{};C.followup.returnedAt=new Date().toISOString();save();logCase();
   var s=$('#s-follow');s.innerHTML='';
   var c=el('div','card');
-  c.appendChild(el('h2',null,'شنو انطاك الصيدلي؟'));
-  c.appendChild(el('p','sub','اكتب اسم الدوا (أو أكثر من واحد) ونشرحلك شلون تستخدمه صح.'));
-  var i=el('input');i.type='text';i.id='med';i.placeholder='مثلاً: أورس + لوبرامايد';
-  var b=el('button','btn','اشرحلي');
-  var out=el('div');out.style.whiteSpace='pre-wrap';
+  c.appendChild(el('h2',null,'شنو انطوك؟'));
+  c.appendChild(el('p','sub','أشّر على الدوا أو الأدوية اللي انطاك إياها الصيدلي أو الطبيب، ونشرحلك شلون تستخدمها.'));
+  var sel=[];
+  d.dr.forEach(function(x){
+    var b=el('button','opt',x.n);b.setAttribute('aria-pressed','false');
+    b.onclick=function(){var i=sel.indexOf(x);if(i<0){sel.push(x);b.setAttribute('aria-pressed','true')}else{sel.splice(i,1);b.setAttribute('aria-pressed','false')}};
+    c.appendChild(b);
+  });
+  var other=el('input');other.type='text';other.id='other-med';other.placeholder='دوا ثاني مو بالقائمة؟ اكتبه هنا';
+  var go=el('button','btn','اشرحلي');
+  var out=el('div','out');out.hidden=true;
   var tag=el('div','ai');
-  b.onclick=function(){
-    var txt=i.value.trim();if(!txt)return i.focus();
-    C.followup.dispensed=txt;save();logCase();
-    out.textContent='لحظة...';tag.textContent='';
+  go.onclick=function(){
+    var free=other.value.trim();
+    var names=sel.map(function(x){return x.n}).concat(free?[free]:[]);
+    if(!names.length){other.focus();return}
+    C.followup.dispensed=names;save();logCase();
+    out.hidden=false;out.textContent='لحظة...';tag.textContent='';
+    var known=sel.slice();
+    if(free) d.dr.forEach(function(x){if(x.kw.test(free)&&known.indexOf(x)<0)known.push(x)});
+    var bad=known.filter(function(x){return x.min&&y<x.min});
+    var facts=known.map(function(x){return x.n+': '+x.t}).join('\n');
     if(sampler){
-      var y=ageYears(C.a);
-      var p='أنت صيدلي عراقي تتكلم عربي عراقي بسيط. حالة إسهال: العمر '+(y<1?Math.round(y*12)+' شهر':Math.round(y)+' سنة')+'، مدة الإسهال '+C.a.duration+' يوم، قرار التقييم: '+(C.verdict==='doctor'?'يحتاج طبيب':'حالة بسيطة للصيدلية')+'. الصيدلي انطاه: "'+txt+'".\nاشرح لكل دوا: شنو يفيد، الجرعة المناسبة لهذا العمر، متى يؤخذ (قبل أو بعد الأكل)، شكد مدة، وأهم عارض جانبي. إذا أي دوا ما يناسب هذا العمر أو هذي الحالة (مثل لوبرامايد للأطفال أقل من ١٢ سنة، أو مضاد حيوي بدون داعي) قولها بصراحة وانصحه يراجع الصيدلي أو الطبيب. لا تشخّص ولا تنطي دوا جديد. نقاط قصيرة وأقل من ١٦٠ كلمة.';
-      sampler(p,{onText:function(e){out.textContent=e.text}}).then(function(r){out.textContent=r.text;tag.textContent='شرح مولّد بالذكاء الاصطناعي — راجع الصيدلي للتأكيد.';C.followup.explained=r.text;save();logCase()})
-      .catch(function(){kb(txt,out,tag)});
-    } else kb(txt,out,tag);
+      var p='أنت صيدلي عراقي تتكلم عربي عراقي بسيط ومفهوم.\n'
+        +'الحالة: '+d.n+'، العمر '+(y<1?Math.round(y*12)+' شهر':Math.round(y)+' سنة')+'، مدة الأعراض '+C.a.duration+' يوم، قرار التقييم: '+(C.verdict==='doctor'?'يحتاج طبيب':'حالة بسيطة للصيدلية')+'.\n'
+        +'الأدوية اللي انطوه إياها: '+names.join('، ')+'.\n'
+        +(facts?'معلومات معتمدة لازم تبني عليها:\n'+facts+'\n':'')
+        +'اكتب لكل دوا: شنو يفيد، شلون ياخذه (الجرعة والتوقيت وعلاقته بالأكل)، شكد مدة، وأهم تحذير أو عارض جانبي.\n'
+        +(bad.length?'مهم: ('+bad.map(function(x){return x.n}).join('، ')+') ما يناسب هذا العمر — قولها بوضوح بالبداية وانصحه يراجع الصيدلي.\n':'')
+        +'لا تضيف أدوية جديدة ولا تشخّص. نقاط قصيرة وأقل من ١٨٠ كلمة.';
+      sampler(p,{onText:function(e){out.textContent=e.text}}).then(function(r){
+        out.textContent=r.text;tag.textContent='شرح مولّد بالذكاء الاصطناعي من المعلومات المعتمدة — راجع الصيدلي للتأكيد.';
+        C.followup.explained=r.text;save();logCase();
+      }).catch(function(){local(known,bad,free,out,tag)});
+    } else local(known,bad,free,out,tag);
   };
-  i.onkeydown=function(e){if(e.key==='Enter')b.click()};
-  var r=el('div','row');r.append(i,b);i.style.flex='1 1 12rem';
-  c.append(r,out,tag);s.appendChild(c);
+  other.onkeydown=function(e){if(e.key==='Enter')go.click()};
+  c.append(other,go,out,tag);s.appendChild(c);
 
   var ck=el('div','card');
   ck.appendChild(el('h2',null,'شلونك هسه؟'));
-  ck.appendChild(el('p','sub','المدة المتوقعة للتحسن: '+timescale(ageYears(C.a))+'. إذا ما تحسنت خلالها، لازم طبيب.'));
+  ck.appendChild(el('p','sub','المدة المتوقعة للتحسن: '+timescale()+'. إذا ما تحسنت خلالها، لازم طبيب.'));
   var rr=el('div','row');
   var g=el('button','btn','تحسنت'),n=el('button','btn ghost','نفس الشي أو زاد');
   g.onclick=function(){C.followup.outcome='better';C.closedAt=new Date().toISOString();save();logCase();
-    ck.innerHTML='';ck.appendChild(el('h2',null,'زين!'));ck.appendChild(el('p',null,'كمل السوائل يوم زيادة، ورجع للأكل الطبيعي تدريجياً. إذا رجع الإسهال أو نزل دم، راجع طبيب.'))};
-  n.onclick=function(){C.followup.outcome='worse';C.flags=C.flags.concat(['ما تحسن خلال '+timescale(ageYears(C.a))+' من بداية العلاج']);C.verdict='doctor';save();logCase();render()};
+    ck.innerHTML='';ck.appendChild(el('h2',null,'زين!'));ck.appendChild(el('p',null,'كمل العلاج مثل ما وصفه الصيدلي أو الطبيب. إذا رجعت الأعراض أو ظهرت علامة خطرة، راجع طبيب.'))};
+  n.onclick=function(){C.followup.outcome='worse';C.flags=C.flags.concat(['ما تحسن خلال '+timescale()+' من بداية العلاج']);C.verdict='doctor';save();logCase();render()};
   rr.append(g,n);ck.appendChild(rr);s.appendChild(ck);
   show('s-follow');
 }
-function kb(txt,out,tag){
-  var hits=KB.filter(function(k){return k.re.test(txt)});
-  out.textContent=hits.length?hits.map(function(k){return'• '+k.t}).join('\n\n')
-    :'ما عرفنا هذا الدوا بالنموذج التجريبي. اسأل الصيدلي عن: الجرعة، متى يؤخذ (قبل/بعد الأكل)، شكد مدة، وشنو العوارض الجانبية. وتذكر: السوائل ومحلول الجفاف هم الأساس بعلاج الإسهال.';
-  tag.textContent='من قاعدة معلومات النموذج (بدون إنترنت).';
+function local(known,bad,free,out,tag){
+  var txt=known.map(function(x){return '• '+x.n+': '+x.t}).join('\n\n');
+  if(bad.length) txt='تنبيه: '+bad.map(function(x){return x.n}).join('، ')+' ما يناسب هذا العمر — راجع الصيدلي قبل ما تستخدمه.\n\n'+txt;
+  if(free&&!known.length) txt='ما عرفنا هذا الدوا بالنموذج التجريبي. اسأل الصيدلي عن: الجرعة، متى يؤخذ (قبل أو بعد الأكل)، شكد مدة، وشنو العوارض الجانبية.';
+  out.textContent=txt;tag.textContent='من قاعدة معلومات النموذج (بدون إنترنت).';
 }
 
-/* ---------- boot ---------- */
-$('#start').onclick=function(){newCase();$('#log').innerHTML='';show('s-chat');next()};
-$('#go-new').onclick=function(){newCase();$('#log').innerHTML='';show('s-chat');next()};
+/* ================= boot ================= */
+$('#start').onclick=pick;
+$('#go-new').onclick=pick;
 $('#go-followup').onclick=function(){followup()};
 $('#exp').onclick=function(){
   var box=$('#expbox');
@@ -455,16 +621,16 @@ $('#exp').onclick=function(){
   var p=el('pre',null,JSON.stringify({current:C,log:store('sj_log')||[]},null,1));
   var cp=el('button','btn ghost','انسخ');
   cp.onclick=function(){var t=p.textContent;
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){cp.textContent='تم النسخ'},function(){sel(p)})}else sel(p)};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){cp.textContent='تم النسخ'},function(){selectAll(p)})}else selectAll(p)};
   box.append(p,cp);
 };
-function sel(n){var r=document.createRange();r.selectNodeContents(n);var s=getSelection();s.removeAllRanges();s.addRange(r)}
+function selectAll(n){var r=document.createRange();r.selectNodeContents(n);var s=getSelection();s.removeAllRanges();s.addRange(r)}
 (function(){
   var prev=store('sj_case');
-  if(prev&&prev.verdict&&!(prev.followup&&prev.followup.outcome)){
-    C=prev;
+  if(prev&&prev.verdict&&prev.dis&&!(prev.followup&&prev.followup.outcome)){
+    C=prev;Q=buildQ(disById(prev.dis)||DIS[0]);
     $('#resume').hidden=false;
-    $('#resume-txt').textContent='آخر تقييم: '+new Date(prev.decidedAt||prev.started).toLocaleString('ar-IQ')+' — القرار كان: '+(prev.verdict==='doctor'?'مراجعة طبيب':'مراجعة صيدلية')+'. شلونك هسه؟';
-  } else newCase();
+    $('#resume-txt').textContent='آخر تقييم: '+(prev.disName||'')+' — '+new Date(prev.decidedAt||prev.started).toLocaleString('ar-IQ')+' — القرار كان: '+(prev.verdict==='doctor'?'مراجعة طبيب':'مراجعة صيدلية')+'. شلونك هسه؟';
+  }
 })();
 </script>

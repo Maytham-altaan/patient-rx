@@ -37,8 +37,10 @@ illness; pregnancy; recurrent diarrhoea or changed bowel habit; suspected food-p
   content is translated and approved by the expert panel.
 - The AI is used for the free-text counselling step, via the artifact `sample` capability. Without it the
   page falls back to a built-in medication knowledge base, so the demo works offline.
-- Pharmacy and physician entries are demo data; replace `PLACES` in `index.html` with the four Wasit
-  study pharmacies before fieldwork.
+- The study runs in **Baghdad**. Demo entries in `PLACES` (`index.html`) are placed across Baghdad
+  districts — Karrada, Mansour, Kadhimiya, Adhamiya, Zayouna, Dora, Jadriya, Sadr City — and must be
+  replaced with the actual study pharmacies and referral sites before fieldwork. The proposal text still
+  says Wasit; Baghdad is the current plan.
 - "بيانات الحالة (للباحث)" in the footer exports every case as JSON for analysis. Data stays in the
   browser (localStorage); nothing is sent to a server.
 

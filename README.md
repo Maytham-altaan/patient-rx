@@ -17,7 +17,12 @@ College of Pharmacy). Ten minor ailments are covered; diarrhoea is the fully bui
    with a Google Maps route link.
 4. **Expected medicines** — before the visit, the result page lists example medicines for that ailment,
    marking any that are inappropriate for the patient's age (e.g. loperamide under 12).
-5. **Follow-up** — on return the patient ticks which of those medicines was actually dispensed (or types
+5. **Handoff** — the patient taps "أرسل حالتي لهنا" on the pharmacy or physician he picked. The app builds
+   an Arabic case summary (every answer, the decision, the triggering referral criteria) and gives him a
+   4-digit code; the target opens "شاشة الصيدلي / الطبيب", enters the code and reads the case before the
+   patient walks in. In the prototype the summary is stored on the device (localStorage) and can be copied
+   or sent over WhatsApp — the production version posts it to the pharmacy's own account on a server.
+6. **Follow-up** — on return the patient ticks which of those medicines was actually dispensed (or types
    another), and gets counselling on dose, timing, duration and side effects, with a warning when the
    dispensed drug does not fit the age. Outcome is recorded after the treatment timescale.
 

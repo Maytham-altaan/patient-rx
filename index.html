@@ -89,6 +89,12 @@ input[type=text],input[type=number],select,textarea{font-family:inherit;font-siz
 .place .meta{color:var(--muted);font-size:.84rem;grid-column:1}
 .place .km{font-variant-numeric:tabular-nums;color:var(--primary-ink);background:var(--primary-soft);border-radius:8px;padding:.15rem .5rem;font-size:.84rem;grid-row:1;grid-column:2}
 .place a{grid-column:2;grid-row:2;font-size:.86rem;color:var(--primary);text-decoration:none;font-weight:500;white-space:nowrap}
+.place .send{grid-column:1/-1;margin-top:.4rem;padding:.4rem .7rem;font-size:.9rem}
+.code{font-family:var(--display);font-size:1.6rem;letter-spacing:4px;color:var(--primary-ink);background:var(--primary-soft);border-radius:11px;padding:.3rem .8rem;width:max-content;font-variant-numeric:tabular-nums}
+.inbox-item{border:1px solid var(--line);border-radius:12px;padding:.8rem;background:var(--surface);display:flex;flex-direction:column;gap:.4rem}
+.badge{font-size:.78rem;border-radius:99px;padding:.1rem .6rem;width:max-content}
+.badge.doc{background:var(--danger-soft);color:var(--danger)}
+.badge.ph{background:var(--primary-soft);color:var(--primary-ink)}
 .tag{display:inline-block;font-size:.72rem;letter-spacing:.4px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:.1rem .55rem;width:max-content}
 pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:.7rem;overflow-x:auto;font-size:.78rem;direction:ltr;text-align:left;max-height:16rem}
 footer{margin-top:2rem;color:var(--muted);font-size:.8rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between}
@@ -137,10 +143,12 @@ footer{margin-top:2rem;color:var(--muted);font-size:.8rem;display:flex;flex-wrap
 
   <section id="s-result" class="stack" hidden></section>
   <section id="s-follow" class="stack" hidden></section>
+  <section id="s-inbox" class="stack" hidden></section>
 
   <footer>
     <span>بيانات الصيدليات والأطباء تجريبية (Demo).</span>
-    <button class="btn ghost" id="exp">بيانات الحالات (للباحث)</button>
+    <span class="row"><button class="btn ghost" id="inbox">شاشة الصيدلي / الطبيب</button>
+    <button class="btn ghost" id="exp">بيانات الحالات (للباحث)</button></span>
   </footer>
   <div id="expbox" hidden></div>
 </div>
@@ -286,7 +294,7 @@ var C=null;
 function newCase(d){C={id:'C'+Date.now(),started:new Date().toISOString(),dis:d?d.id:null,disName:d?d.n:null,a:{},flags:[],verdict:null,followup:null};qi=0;save()}
 function save(){store('sj_case',C)}
 function logCase(){var all=store('sj_log')||[];all=all.filter(function(x){return x.id!==C.id});all.push(C);store('sj_log',all)}
-function show(id){['s-intro','s-pick','s-chat','s-result','s-follow'].forEach(function(s){$('#'+s).hidden=(s!==id)});window.scrollTo(0,0)}
+function show(id){['s-intro','s-pick','s-chat','s-result','s-follow','s-inbox'].forEach(function(s){$('#'+s).hidden=(s!==id)});window.scrollTo(0,0)}
 
 /* ================= 1. pick the complaint ================= */
 function pick(){
@@ -519,6 +527,7 @@ function places(kind){
   ctl.append(gps,sel);box.appendChild(ctl);
   var st=el('div','sub');box.appendChild(st);
   var list=el('div','stack');list.style.gap='.5rem';box.appendChild(list);
+  var sent=el('div');box.appendChild(sent);
   function draw(lat,lng,from){
     var rows=PLACES.filter(function(p){return p.k===kind});
     if(lat!=null){rows=rows.map(function(p){var o={};for(var k in p)o[k]=p[k];o.d=km(lat,lng,p.lat,p.lng);return o}).sort(function(a,b){return a.d-b.d})}
@@ -530,7 +539,11 @@ function places(kind){
       r.appendChild(el('div','meta',p.a+' · '+p.h));
       var a=el('a',null,'الطريق على الخريطة ↗');
       a.href='https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng;a.target='_blank';a.rel='noopener';
-      r.appendChild(a);list.appendChild(r);
+      r.appendChild(a);
+      var sb=el('button','btn ghost send','أرسل حالتي لهنا');
+      sb.onclick=function(){sendTo(p,sent)};
+      r.appendChild(sb);
+      list.appendChild(r);
     });
   }
   gps.onclick=function(){
@@ -545,6 +558,92 @@ function places(kind){
   draw(null,null,'شغّل الموقع أو اختار منطقتك حتى نرتبهم حسب الأقرب.');
   box.appendChild(el('span','tag','بيانات تجريبية'));
   return box;
+}
+
+/* ================= 4b. handoff: send the case to the chosen target ================= */
+function answerLabel(q,v){
+  if(v==null||v==='')return '—';
+  if(Object.prototype.toString.call(v)==='[object Array]')return v.length?v.map(function(x){return lbl(q.id,x)}).join('، '):'ماكو شي';
+  if(q.type==='num'||q.type==='text')return String(v);
+  return lbl(q.id,v);
+}
+function summaryText(code){
+  var d=disById(C.dis),a=C.a,y=ageYears(a),L=[];
+  L.push('Patient Rx — ملخص حالة مريض (نموذج بحثي تجريبي)');
+  L.push('رمز الحالة: '+code);
+  L.push('وقت الإرسال: '+new Date().toLocaleString('ar-IQ'));
+  L.push('الشكوى: '+d.n+' — '+d.g);
+  L.push('المريض: '+(a.sex==='f'?'أنثى':'ذكر')+' — العمر '+(y<1?Math.round(y*12)+' شهر':Math.round(y)+' سنة')+(a.who==='me'?'':' (الحالة لشخص ثاني)'));
+  L.push('');
+  L.push('— أجوبة المريض —');
+  Q.forEach(function(q){
+    if(!(q.id in a))return;
+    if(q.id==='who'||q.id==='sex'||q.id==='age'||q.id==='months')return;
+    L.push('• '+(typeof q.t==='function'?q.t(a):q.t)+'\n   '+answerLabel(q,a[q.id]));
+  });
+  L.push('');
+  L.push('— نتيجة التقييم —');
+  L.push('القرار: '+(C.verdict==='doctor'?'تحويل لطبيب':'مناسبة للصيدلية'));
+  L.push(C.flags.length?('العلامات اللي استوجبت التحويل:\n   - '+C.flags.join('\n   - ')):'ماكو علامات خطرة حسب معايير التحويل.');
+  if(C.followup&&C.followup.dispensed&&C.followup.dispensed.length)L.push('انصرف له سابقاً: '+C.followup.dispensed.join('، '));
+  L.push('');
+  L.push('ملاحظة: هذا ملخص مولّد من أجوبة المريض بأداة بحثية، للاسترشاد فقط ولا يغني عن تقييمك السريري.');
+  return L.join('\n');
+}
+function sendTo(place,host){
+  var code=String(Math.floor(1000+Math.random()*9000));
+  var text=summaryText(code);
+  var box=store('sj_inbox')||[];
+  box.unshift({code:code,target:place.n,addr:place.a,kind:place.k,at:new Date().toISOString(),dis:C.disName,verdict:C.verdict,text:text});
+  store('sj_inbox',box.slice(0,50));
+  C.sentTo={target:place.n,code:code,at:new Date().toISOString()};save();logCase();
+  host.innerHTML='';
+  var c=el('div','card');
+  c.appendChild(el('h2',null,'انرسلت حالتك لـ '+place.n));
+  c.appendChild(el('p','sub','انطي هذا الرمز عند ما توصل، والملخص يكون جاهز قبلك.'));
+  c.appendChild(el('div','code',code));
+  var pre=el('div','out',text);c.appendChild(pre);
+  var row=el('div','row');
+  var cp=el('button','btn ghost','انسخ الملخص');
+  cp.onclick=function(){
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(function(){cp.textContent='تم النسخ'},function(){selectAll(pre)});
+    else selectAll(pre);
+  };
+  var wa=el('a','btn ghost','أرسله بالواتساب');
+  wa.href='https://wa.me/?text='+encodeURIComponent(text);wa.target='_blank';wa.rel='noopener';wa.style.textDecoration='none';
+  row.append(cp,wa);c.appendChild(row);
+  c.appendChild(el('span','tag','محاكاة: بالنسخة النهائية الملخص يوصل لسيرفر الصيدلية أو العيادة مباشرة'));
+  host.appendChild(c);
+  c.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function inboxView(){
+  var s=$('#s-inbox');s.innerHTML='';
+  var h=el('div','card');
+  h.appendChild(el('h2',null,'شاشة الصيدلي / الطبيب'));
+  h.appendChild(el('p','sub','الحالات اللي أرسلها المرضى لهذا الجهاز. بالنسخة النهائية كل صيدلية تشوف حالاتها بس، عبر حساب وسيرفر.'));
+  var f=el('input');f.type='text';f.placeholder='دوّر برمز الحالة (٤ أرقام)';h.appendChild(f);
+  s.appendChild(h);
+  var list=el('div','stack');s.appendChild(list);
+  function draw(q){
+    var all=store('sj_inbox')||[];
+    if(q)all=all.filter(function(x){return x.code.indexOf(q)>-1});
+    list.innerHTML='';
+    if(!all.length){list.appendChild(el('div','note','ماكو حالات لحد الآن. جرب: اختار حالة، اكمل التقييم، وبصفحة النتيجة اضغط "أرسل حالتي لهنا" عند أي صيدلية.'));return}
+    all.forEach(function(x){
+      var c=el('div','inbox-item');
+      var top=el('div','row');
+      top.appendChild(el('div','code',x.code));
+      top.appendChild(el('span','badge '+(x.verdict==='doctor'?'doc':'ph'),x.verdict==='doctor'?'تحويل لطبيب':'مناسبة للصيدلية'));
+      c.appendChild(top);
+      c.appendChild(el('div','sub',(x.dis||'')+' · '+x.target+' · '+new Date(x.at).toLocaleString('ar-IQ')));
+      c.appendChild(el('div','out',x.text));
+      list.appendChild(c);
+    });
+  }
+  f.oninput=function(){draw(f.value.trim())};
+  draw('');
+  var back=el('button','btn ghost','رجوع');back.onclick=function(){show('s-intro')};s.appendChild(back);
+  show('s-inbox');
 }
 
 /* ================= 5. follow-up: pick what was dispensed ================= */
@@ -617,6 +716,7 @@ function local(known,bad,free,out,tag){
 $('#start').onclick=pick;
 $('#go-new').onclick=pick;
 $('#go-followup').onclick=function(){followup()};
+$('#inbox').onclick=inboxView;
 $('#exp').onclick=function(){
   var box=$('#expbox');
   if(!box.hidden){box.hidden=true;return}
